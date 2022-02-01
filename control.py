@@ -27,7 +27,8 @@ class ControlTemperature():
             else:
                 dictionary[temp_set] = {}
                 for key in dictionary[lower]:
-                    dictionary[temp_set][key] = ((10-temp_set%10*dictionary[lower][key]) + temp_set%10*dictionary[higher][key])/10
+                    dictionary[temp_set][key] = ((10-temp_set%10*dictionary[lower][key]) + 
+                                                 temp_set%10*dictionary[higher][key])/10
                 print("control parameters: ", dictionary[temp_set])
 
     def calc_temp_diff(self, temp_actual):
