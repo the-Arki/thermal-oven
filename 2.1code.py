@@ -106,13 +106,13 @@ def main():
         if btn_up.value:
             increase_temp(1)
 # log has to be completely in a separat function / class
-        if duration - last_log >= 1 and log_enabled:
+        if duration - last_log >= 10 and log_enabled:
             if relay.value:
                 relay_log_value = temp_set + 0.5
             else:
                 relay_log_value = temp_set - 0.5
             log_data(round(duration, 0), round(temp_actual, 1), temp_set, relay_log_value)
-            last_log += 1
+            last_log += 10
 
         direction = t.check_direction()
         inflexion_point = t.get_inflexion_point()
