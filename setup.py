@@ -27,12 +27,12 @@ lcd_rows = 2
 # initialize lcd
 lcd = Character_LCD_Mono(lcd_rs, lcd_en, lcd_d4, lcd_d5, lcd_d6, lcd_d7, lcd_columns, lcd_rows)
 
-# setup button up
+# setup button-up
 btn_up = DigitalInOut(board.GP22)
 btn_up.direction = Direction.INPUT
 btn_up.pull = Pull.DOWN
 
-# setup button down
+# setup button-down
 btn_down = DigitalInOut(board.GP26)
 btn_down.direction = Direction.INPUT
 btn_down.pull = Pull.DOWN
@@ -40,3 +40,12 @@ btn_down.pull = Pull.DOWN
 # setup relay
 relay = DigitalInOut(board.GP6)
 relay.direction = Direction.OUTPUT
+
+# initialize built-in LED
+led = DigitalInOut(board.LED)
+led.switch_to_output()
+
+#setup log pin (if enabled, files on pico are writable)
+log_pin = DigitalInOut(board.GP0)
+log_pin.direction = Direction.INPUT
+log_pin.pull = Pull.UP

@@ -75,16 +75,14 @@ class Temperature():
             self.temp_extremum_avg = avg
             print("average: ", avg)
             return(avg)
-        else:
-            return None
+        return None
 
     def calculate_temp_delta(self):
         if self.temp_max_list and self.temp_min_list:
             self.temp_delta = self.temp_max_list[-1] - self.temp_min_list[-1]
             print("temp_delta: ", self.temp_delta)
             return(self.temp_delta)
-        else:
-            return None
+        return None
 
     def define_state(self):
         "define whether the process is stable or not"

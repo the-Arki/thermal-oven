@@ -13,68 +13,81 @@ print("initial temp_set: ", temp_set)
 t = Temperature(temp_actual)
 control = ControlTemperature(temp_set)
 
-led = DigitalInOut(board.LED)
-led.switch_to_output()
+# Built-in LED lights for 1 sec at start
 led.value = True
 time.sleep(1)
 led.value = False
 
-#setup log pin
-log_pin = DigitalInOut(board.GP0)
-log_pin.direction = Direction.INPUT
-log_pin.pull = Pull.UP
+# initialize log pin
 if log_pin.value:
     log_enabled = True
 else:
     log_enabled = False
 
+# log the number of restarts
+def count_restarts():
+    restarts = {}
+    if log_enabled:
+        with open("/restarts.txt", "r") as rs:
+            restarts = eval(rs.read())
+        if not str(control.temp_set) in restarts:
+            restarts[str(control.temp_set)] = 1
+        else:
+            restarts[str(control.temp_set)] += 1
+        with open("/restarts.txt", "w") as rs:
+            rs.write(str(restarts))
+    print('restarts: ', restarts)
+
+count_restarts()        
+
 # initialize lcd
 lcd.clear()
-lcd.message = "Temp: {0:0.1f} C\nSet: {1:0.0f}".format(temp_actual, temp_set)
+lcd.message = "Temp: {0:0.1f} C\nSet: {1:0.0f}".format(temp_actual, control.temp_set)
 
 # initialize relay (at start turned off)
 relay.value = False
 
 def increase_temp(duration, max=150):
     start = time.monotonic()
-    #temp_set should be control.temp_set!!!!!!!!!!!!!!!!!!!4
-    global temp_set
-    if temp_set < max:
-        temp_set += 1
+    if control.temp_set < max:
+        control.temp_set += 1
         update_lcd()
-        while btn_up.value and temp_set < max:
+        while btn_up.value and control.temp_set < max:
             now = time.monotonic()
             if now-start > duration:
                 for i in range(10):
-                    temp_set += 1
+                    control.temp_set += 1
                     time.sleep(0.02)
-                    if not btn_up.value or temp_set == max:
+                    if not btn_up.value or control.temp_set == max:
                         break
                 update_lcd()
-    control.set_control_parameters(temp_set)
+    control.set_control_parameters(control.temp_set)
+    t.temp_max_list = []
+    t.temp_min_list = []
     if log_enabled:
         with open("/temp.txt", "w") as t:
-            t.write(str(temp_set))
+            t.write(str(control.temp_set))
 
 def decrease_temp(duration, min=20):
     start = time.monotonic()
-    global temp_set
-    if temp_set > min:
-        temp_set -= 1
+    if control.temp_set > min:
+        control.temp_set -= 1
         update_lcd()
-        while btn_down.value and temp_set > min:
+        while btn_down.value and control.temp_set > min:
             now = time.monotonic()
             if now-start > duration:
                 for i in range(10):
-                    temp_set -= 1
+                    control.temp_set -= 1
                     time.sleep(0.02)
-                    if not btn_down.value or temp_set == min:
+                    if not btn_down.value or control.temp_set == min:
                         break
                 update_lcd()
-    control.set_control_parameters(temp_set)
+    control.set_control_parameters(control.temp_set)
+    t.temp_max_list = []
+    t.temp_min_list = []
     if log_enabled:
         with open("/temp.txt", "w") as t:
-            t.write(str(temp_set))
+            t.write(str(control.temp_set))
 
 def update_lcd():
     lcd.clear()
@@ -87,7 +100,6 @@ def log_data(duration, temp, t_set, relay_log_value):
         log.flush()
 
 def main():
-    global temp_set
     start = time.monotonic()
     previous_temp = 0
     last_log = 0
@@ -108,10 +120,10 @@ def main():
 # log has to be completely in a separat function / class
         if duration - last_log >= 10 and log_enabled:
             if relay.value:
-                relay_log_value = temp_set + 0.5
+                relay_log_value = control.temp_set + 0.5
             else:
-                relay_log_value = temp_set - 0.5
-            log_data(round(duration, 0), round(temp_actual, 1), temp_set, relay_log_value)
+                relay_log_value = control.temp_set - 0.5
+            log_data(round(duration, 0), round(temp_actual, 1), control.temp_set, relay_log_value)
             last_log += 10
 
         direction = t.check_direction()
@@ -119,12 +131,14 @@ def main():
         t.get_min_max_temp(inflexion_point)
         if inflexion_point:
             control.inflexion_point_hit = True
+            control.inflexion_point = inflexion_point
             temp_delta = t.calculate_temp_delta()
             temp_extremum_avg = t.calculate_temp_extremum_avg()
         temp_state = t.define_state()
         control.calc_temp_diff(temp_actual)
         control.select_control_type(temp_actual, temp_state, direction, temp_extremum_avg, temp_delta)
         relay.value = control.heating_on
+        # comment out below if not calibrating
         if control.calibrate_stable_parameters():
             t.temp_max_list = []
             t.temp_min_list = []

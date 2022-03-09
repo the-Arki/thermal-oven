@@ -9,6 +9,7 @@ class ControlTemperature():
     heating_duration = int
     temperature_difference = ""
     inflexion_point_hit = False
+    inflexion_point = ""
     calibration_counter = 0
     with open("control_parameters.txt", "r") as d:
         control_parameters_dict = eval(d.read())
@@ -56,7 +57,10 @@ class ControlTemperature():
         else:
             if self.inflexion_point_hit:
                 print("state: stable")
-                self.adjust_stable_parameters(temp_extremum_avg, temp_delta, temp_state)
+                if self.inflexion_point == 'min':
+                    self.adjust_stable_parameters(temp_extremum_avg, temp_delta, temp_state)
+                elif self.inflexion_point == 'max':
+                    self.inflexion_point_hit = False
             self.control_temperature(direction, temp_actual)
 
 
@@ -70,7 +74,7 @@ class ControlTemperature():
                 self.heating_on = True
                 self.heating_duration = self.control_parameters_dict \
                     [self.temp_set][self.temperature_difference]
-                print(self.control_parameters_dict[self.temp_set])
+                # print(self.control_parameters_dict[self.temp_set])
         elif direction == "going_downwards":
             if self.temp_set + upper_limit > temp_actual:
                 self.heat_up_start = time.monotonic()
@@ -78,20 +82,20 @@ class ControlTemperature():
                 self.heating_on = True
                 self.heating_duration = self.control_parameters_dict \
                     [self.temp_set][self.temperature_difference]
-                print(self.control_parameters_dict[self.temp_set])
+                # print(self.control_parameters_dict[self.temp_set])
 
     def adjust_stable_parameters(self, temp_extremum_avg, temp_delta, temp_state):
         self.inflexion_point_hit = False
         if temp_state != "stable":
             return
-        if math.fabs(temp_extremum_avg - self.temp_set) > 0.1:
+        if temp_delta > 1:
+            self.control_parameters_dict \
+                [self.temp_set][self.temperature_difference] -= 0.1
+            self.calibration_counter = 0
+        elif math.fabs(temp_extremum_avg - self.temp_set) > 0.1:
             difference = self.temp_set - temp_extremum_avg
             self.control_parameters_dict[self.temp_set]["lower_limit"] += difference
             self.control_parameters_dict[self.temp_set]["upper_limit"] += difference
-            self.calibration_counter = 0
-        elif temp_delta > 1:
-            self.control_parameters_dict \
-                [self.temp_set][self.temperature_difference] -= 0.1
             self.calibration_counter = 0
         else:
             self.calibration_counter += 1
@@ -99,15 +103,17 @@ class ControlTemperature():
         print("calibration_counter: ", self.calibration_counter)
 
     def calibrate_stable_parameters(self):
-        if self.calibration_counter >= 4 and self.temp_set <= 140:
+        if self.calibration_counter >= 4 and self.temp_set <= 150:
             self.calibration_counter = 0
             with open("control_parameters.txt", "w") as d:
                 d.write(str(self.control_parameters_dict))
             print("control parameters: ", self.control_parameters_dict[self.temp_set])
-            self.temp_set += 10
+            if self.temp_set == 150:
+                self.temp_set = 0
+            else:
+                self.temp_set += 10
             print("new temp_set: ", self.temp_set)
             with open("/temp.txt", "w") as t:
                 t.write(str(self.temp_set))
             return True
-        else:
-            return False
+        return False
