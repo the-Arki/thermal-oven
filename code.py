@@ -91,7 +91,7 @@ def decrease_temp(duration, min=20):
 
 def update_lcd():
     lcd.clear()
-    lcd.message = "Temp: {0:0.1f} C\nSet: {1:0.0f} C".format(t.temperature, control.temp_set)
+    lcd.message = "Temp: {0:0.1f} C\nSet: {1:0.0f} C\nDelta: {2:0.2f} C\nAverage: {3: 0.2f} C".format(t.temperature, control.temp_set, t.temp_delta, t.temp_extremum_avg)
 
 # log sensor data into csv file (if log_enabled)
 def log_data(duration, temp, t_set, relay_log_value):

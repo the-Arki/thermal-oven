@@ -10,8 +10,8 @@ class Temperature():
     previous_direction = "going_upwards"
     temp_max_list = []
     temp_min_list = []
-    temp_extremum_avg = float
-    temp_delta = float
+    temp_extremum_avg = 0.0
+    temp_delta = 0.0
     state = "unstable"
 
     def __init__(self, temp):

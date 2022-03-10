@@ -99,6 +99,8 @@ class ControlTemperature():
             self.calibration_counter = 0
         else:
             self.calibration_counter += 1
+        with open("control_parameters.txt", "w") as d: # comment out after calibration
+            d.write(str(self.control_parameters_dict))
         print("new control parameters: ", self.control_parameters_dict[self.temp_set])
         print("calibration_counter: ", self.calibration_counter)
 
